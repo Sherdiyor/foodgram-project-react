@@ -58,7 +58,7 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveIntegerField(verbose_name="количество")
 
     class Meta:
-        verbose_name = "Ингридиенты в рецепте"
+        verbose_name = "Ингредиенты в рецепте"
         constraints = [
             models.UniqueConstraint(
                 fields=["recipe", "ingredient"], name="recipeingredient"
@@ -81,3 +81,27 @@ class Favorite(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["recipe", "user"], name="favorite")
         ]
+
+
+class ShoppingCart(models.Model):
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        verbose_name="рецепты в корзине",
+        related_name="in_cart",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="владелец корзины",
+        related_name="cart",
+    )
+
+    class meta:
+        verbose_name = "Список покупок"
+        constraint = [
+            models.UniqueConstraint(fields=("recipe", "user"), name="recipe_is_in_cart")
+        ]
+
+    def __str__(self):
+        return f"{self.recipe} находится в корзине у {self.user}"

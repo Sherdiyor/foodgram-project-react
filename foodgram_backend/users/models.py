@@ -11,6 +11,15 @@ class User(AbstractUser):
     )
     first_name = models.CharField(blank=False, verbose_name="имя", max_length=150)
     last_name = models.CharField(blank=False, verbose_name="фамилия", max_length=150)
+    shopping_cart = models.ManyToManyField(
+        "recipes.Recipe",
+        verbose_name="корзина покупок",
+        blank=True,
+        related_name="users",
+    )
+    favorite = models.ManyToManyField(
+        "recipes.Recipe", blank=True, verbose_name="список избранного"
+    )
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username", "first_name", "last_name"]
 
