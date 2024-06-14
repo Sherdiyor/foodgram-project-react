@@ -1,8 +1,8 @@
 from rest_framework import mixins, viewsets
 
-from foodgram_backend.recipes.filters import IngredientsSearchFilter
-from foodgram_backend.recipes.serializers import IngredientSerializer
-from .models import Ingredient
+from .filters import IngredientsSearchFilter
+from .serializers import IngredientSerializer, TagSerializer
+from .models import Ingredient, Tag
 
 
 class GETViewSet(
@@ -16,3 +16,8 @@ class IngredientViewSet(GETViewSet):
     serializer_class = IngredientSerializer
     filter_backends = (IngredientsSearchFilter,)
     search_fields = ("^name",)
+
+
+class TagViewSet(GETViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer

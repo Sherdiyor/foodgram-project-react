@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Favorite, Tag, Ingredient, Recipe, RecipeIngredient, ShoppingCart
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from drf_extra_fields.fields import Base64ImageField
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -32,7 +31,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredient = RecipeIngredientSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
     author = UserSerializer(read_only=True)
-    image = Base64ImageField(use_url=True)
+    image = serializers.ImageField(
+        max_length=None, use_url=True, allow_null=True, required=False
+    )
 
     class Meta:
         model = Recipe
