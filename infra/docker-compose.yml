@@ -1,6 +1,8 @@
 version: '3.3'
 volumes: 
   postgres_data:
+  media:
+  static:
 services:
 
   db:
@@ -16,6 +18,21 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
+
+  backend:
+    build:
+      context: ../backend/
+      dockerfile: Dockerfile
+    volumes:
+      - static:/app/static
+      - media:/app/static
+    depends_on:
+      - db
+    env_file:
+      - ../backend/.env
+    command: |
+      bash -c 'gunicorn foodgram_backend.wsgi:application --bind 0:8000' 
+    
 
   nginx:
     image: nginx:1.19.3
