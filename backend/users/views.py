@@ -14,7 +14,7 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserSerializer
     pagination_class = CustomPagination
 
-    @action(detail=False, permission_classes=IsAuthenticated)
+    @action(detail=False, permission_classes=[IsAuthenticated])
     def following(self, request):
         queryset = Follow.objects.filter(follower=request.user)
         pages = self.paginate_queryset(queryset)
