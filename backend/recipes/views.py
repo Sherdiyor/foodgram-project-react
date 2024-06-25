@@ -36,7 +36,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrAuthorOrReadOnly]
 
     def get_serializer_class(self):
-        if self.request.method is "GET":
+        if self.request.method == "GET":
             return RecipeReadSerializer
         return RecipeCreateSerializer
 
