@@ -2,8 +2,7 @@ from djoser.serializers import UserSerializer
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 
-from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                     ShoppingCart, Tag)
+from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -94,7 +93,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.bulk_create(ing_list)
 
     def create(self, validated_data):
-        request = self.context.get("request", None)
         tags = validated_data.pop("tags")
         ingredients = validated_data.pop("ingredients")
         recipe = Recipe.objects.create(**validated_data)

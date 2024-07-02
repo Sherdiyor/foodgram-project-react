@@ -7,8 +7,7 @@ from rest_framework.response import Response
 
 from .models import Follow, User
 from .pagination import CustomPagination
-from .serializers import (CustomUserSerializer, FollowRecipeSerializer,
-                          FollowSerializer)
+from .serializers import CustomUserSerializer, FollowSerializer
 
 
 class CustomUserViewSet(UserViewSet):
