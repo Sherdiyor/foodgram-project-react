@@ -1,21 +1,20 @@
-from rest_framework import mixins, viewsets, status
-from rest_framework.response import Response
+from django.db.models import Sum
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+
+from users.pagination import CustomPagination
 
 from .filters import IngredientsSearchFilter
-from .serializers import (
-    IngredientSerializer,
-    TagSerializer,
-    RecipeCreateSerializer,
-    RecipeReadSerializer,
-    FavoriteSerializer,
-    ShoppingCartSerializer,
-)
-from .models import Favorite, Ingredient, Tag, Recipe, ShoppingCart
-from users.pagination import CustomPagination
+from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                     ShoppingCart, Tag)
 from .permissions import IsAdminOrAuthorOrReadOnly
+from .serializers import (FavoriteSerializer, IngredientSerializer,
+                          RecipeCreateSerializer, RecipeReadSerializer,
+                          ShoppingCartSerializer, TagSerializer)
 
 
 class GETViewSet(
@@ -65,7 +64,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         data = {"user": user.id, "recipe": recipe.id}
         serializer = FavoriteSerializer(data=data, context=context)
-        serializer.is_valid()
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -93,3 +92,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
             ShoppingCart, user=request.user, recipe=get_object_or_404(Recipe, id=pk)
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def download_shopping_cart(self, request):
+        ingredients = (
+            RecipeIngredient.objects.filter(recipe__in_cart__user=request.user)
+            .values("ingredient__name", "ingredient__measurement_unit")
+            .annotate(ingredient_amount=Sum("amount"))
+        )
+        shopping_list = ["Список покупок:\n"]
+        for ingredient in ingredients:
+            name = ingredient["ingredient__name"]
+            unit = ingredient["ingredient__measurement_unit"]
+            amount = ingredient["ingredient_amount"]
+            shopping_list.append(f"\n{name} - {amount}, {unit}")
+        response = FileResponse(shopping_list, content_type="text/plain")
+        response["Content-Disposition"] = 'attachment; filename="shopping_cart.txt"'
+        return response

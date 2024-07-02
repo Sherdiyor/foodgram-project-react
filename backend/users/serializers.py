@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import User, Follow
+
 from recipes.models import Recipe
+
+from .models import Follow, User
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -21,7 +23,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request.user.is_anonymous:
             return False
-        return Follow.objects.filter(user=request.user, following=obj.id).exists()
+        return Follow.objects.filter(follower=request.user, following=obj.id).exists()
 
 
 class FollowRecipeSerializer(serializers.ModelSerializer):
@@ -61,7 +63,7 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         return Follow.objects.filter(
-            follower=obj.user, following=obj.following
+            follower=obj.follower, following=obj.following
         ).exists()
 
     def get_recipes(self, obj):
