@@ -15,7 +15,9 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserSerializer
     pagination_class = CustomPagination
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsAuthenticated]
+    )
     def subscribe(self, request, id=None):
         user = request.user
         following = get_object_or_404(User, id=id)
@@ -56,6 +58,7 @@ class CustomUserViewSet(UserViewSet):
     def delete_subscribe(self, request, id=None):
         user = request.user
         following = get_object_or_404(User, pk=id)
-        subscribe = get_object_or_404(Follow, follower=user, following=following)
+        subscribe = get_object_or_404(
+            Follow, follower=user, following=following)
         subscribe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

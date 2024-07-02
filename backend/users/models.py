@@ -3,12 +3,15 @@ from django.db import models
 
 
 class User(AbstractUser):
-    email = models.EmailField(unique=True, verbose_name="почта", max_length=254)
+    email = models.EmailField(
+        unique=True, verbose_name="почта", max_length=254)
     username = models.CharField(
         blank=False, unique=True, verbose_name="никнэйм", max_length=150
     )
-    first_name = models.CharField(blank=False, verbose_name="имя", max_length=150)
-    last_name = models.CharField(blank=False, verbose_name="фамилия", max_length=150)
+    first_name = models.CharField(
+        blank=False, verbose_name="имя", max_length=150)
+    last_name = models.CharField(
+        blank=False, verbose_name="фамилия", max_length=150)
     shopping_cart = models.ManyToManyField(
         "recipes.Recipe",
         verbose_name="корзина покупок",

@@ -54,10 +54,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             if self.request.query_params.get("is_favorite"):
                 queryset = queryset.filter(favorites__user=self.request.user)
             if self.request.query_params.get("in_is_shopping_cart"):
-                queryset = queryset.filter(shopping_cart__user=self.request.user)
+                queryset = queryset.filter(
+                    shopping_cart__user=self.request.user)
         return queryset
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsAuthenticated]
+    )
     def favorite(self, request, pk):
         user = request.user
         context = {"request": request}
@@ -71,11 +74,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @favorite.mapping.delete
     def delete_favorite(self, request, pk):
         get_object_or_404(
-            Favorite, user=request.user, recipe=get_object_or_404(Recipe, id=pk)
+            Favorite, user=request.user, recipe=get_object_or_404(
+                Recipe, id=pk)
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk):
         user = request.user
         context = {"request": request}
@@ -89,11 +94,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, pk):
         get_object_or_404(
-            ShoppingCart, user=request.user, recipe=get_object_or_404(Recipe, id=pk)
+            ShoppingCart, user=request.user, recipe=get_object_or_404(
+                Recipe, id=pk)
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    @action(
+        detail=False, methods=["get"], permission_classes=[IsAuthenticated]
+    )
     def download_shopping_cart(self, request):
         ingredients = (
             RecipeIngredient.objects.filter(recipe__in_cart__user=request.user)
@@ -107,5 +115,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             amount = ingredient["ingredient_amount"]
             shopping_list.append(f"\n{name} - {amount}, {unit}")
         response = FileResponse(shopping_list, content_type="text/plain")
-        response["Content-Disposition"] = 'attachment; filename="shopping_cart.txt"'
+        response["Content-Disposition"] = (
+            'attachment; filename="shopping_cart.txt"'
+        )
         return response

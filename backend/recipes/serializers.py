@@ -2,7 +2,9 @@ from djoser.serializers import UserSerializer
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 
-from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
+from .models import (
+    Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
+)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -22,7 +24,8 @@ class IngredientSerializer(serializers.ModelSerializer):
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     name = serializers.ReadOnlyField(source="ingredient.name")
-    measurement_unit = serializers.ReadOnlyField(source="ingredient.measurement_unit")
+    measurement_unit = serializers.ReadOnlyField(
+        source="ingredient.measurement_unit")
 
     class Meta:
         model = RecipeIngredient
@@ -31,7 +34,8 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(many=True)
-    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(), many=True)
     author = UserSerializer(read_only=True)
     image = Base64ImageField(max_length=None)
 
@@ -76,7 +80,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, ingredients):
         if not ingredients:
-            raise serializers.ValidationError("Должен быть хотя бы 1 ингредиент")
+            raise serializers.ValidationError(
+                "Должен быть хотя бы 1 ингредиент")
         return ingredients
 
     @staticmethod
@@ -147,7 +152,10 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if not request or request.user.is_anonymous:
             return False
-        return ShoppingCart.objects.filter(recipe_id=obj.id, user=request.user).exists()
+        return (
+            ShoppingCart.objects.filter(
+                recipe_id=obj.id, user=request.user).exists()
+        )
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -172,6 +180,10 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     def validate(self, data):
         user = data["user"]
         recipe_id = data["recipe"].id
-        if ShoppingCart.objects.filter(user=user, recipe__id=recipe_id).exists():
-            raise serializers.ValidationError("Рецепт уже добавлен в список покупок")
+        if (
+            ShoppingCart.objects.filter(
+                user=user, recipe__id=recipe_id).exists()
+        ):
+            raise serializers.ValidationError(
+                "Рецепт уже добавлен в список покупок")
         return data

@@ -34,12 +34,14 @@ class Recipe(models.Model):
         Ingredient, through="RecipeIngredient", related_name="recipes"
     )
     tags = models.ManyToManyField(Tag, related_name="recipes")
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recipes")
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="recipes")
     image = models.ImageField(upload_to="images", blank=True)
     name = models.CharField("название", unique=True, max_length=200)
     text = models.CharField("описание рецепта", max_length=200)
     cooking_time = models.PositiveIntegerField("время приготовления")
-    pub_date = models.DateTimeField("дата публикации", auto_now_add=True, db_index=True)
+    pub_date = models.DateTimeField(
+        "дата публикации", auto_now_add=True, db_index=True)
 
     class Meta:
         ordering = ("-pub_date",)
@@ -74,7 +76,8 @@ class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name="favorites"
     )
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorites")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="favorites")
 
     class Meta:
         ordering = ("recipe", "user")
@@ -101,7 +104,8 @@ class ShoppingCart(models.Model):
     class meta:
         verbose_name = "Список покупок"
         constraint = [
-            models.UniqueConstraint(fields=("recipe", "user"), name="recipe_is_in_cart")
+            models.UniqueConstraint(
+                fields=("recipe", "user"), name="recipe_is_in_cart")
         ]
 
     def __str__(self):
