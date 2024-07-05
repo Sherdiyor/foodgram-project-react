@@ -2,9 +2,8 @@ from djoser.serializers import UserSerializer
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 
-from .models import (
-    Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
-)
+from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                     ShoppingCart, Tag)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -26,10 +25,17 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source="ingredient.name")
     measurement_unit = serializers.ReadOnlyField(
         source="ingredient.measurement_unit")
+    amount = serializers.IntegerField()
 
     class Meta:
         model = RecipeIngredient
         fields = ("id", "name", "measurement_unit", "amount")
+
+    def validate_amount(self, amount):
+        if amount < 1:
+            raise serializers.ValidationError(
+                "Количество ингредиентов должно быть больше 1")
+        return amount
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -59,6 +65,15 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ).data
 
     def validate_tags(self, tags):
+        tags_len = len(tags)
+        if not tags:
+            raise serializers.ValidationError(
+                "Нельзя создать рецепт без тегов"
+            )
+        if tags_len != len(set(tags)):
+            raise serializers.ValidationError(
+                "Теги не должны повторяться"
+            )
         for tag in tags:
             if not Tag.objects.filter(id=tag.id).exists():
                 raise serializers.ValidationError("Такого тега не существует")
@@ -79,9 +94,17 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return cooking_time
 
     def validate_ingredients(self, ingredients):
+        ingredients_len = len([ingredient.get("id")
+                              for ingredient in ingredients])
         if not ingredients:
             raise serializers.ValidationError(
                 "Должен быть хотя бы 1 ингредиент")
+        if ingredients_len != len(
+            set([ingredient.get("id") for ingredient in ingredients])
+        ):
+            raise serializers.ValidationError(
+                "Ингредиенты не должны повторяться"
+            )
         return ingredients
 
     @staticmethod
@@ -111,6 +134,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop("ingredients")
         tags = validated_data.pop("tags")
         instance.tags.set(tags)
+        if not (ingredients or tags):
+            raise serializers.ValidationError(
+                "Ингредиенты или теги отсутствуют"
+            )
         self.create_ingredients(instance, ingredients)
         return super().update(instance, validated_data)
 
@@ -126,16 +153,15 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = (
             "id",
-            "ingredients",
             "tags",
             "author",
-            "image",
-            "name",
-            "text",
-            "cooking_time",
-            "pub_date",
+            "ingredients",
             "is_favorite",
             "is_in_shopping_cart",
+            "name",
+            "image",
+            "text",
+            "cooking_time",
         )
 
     def get_ingredients(self, obj):

@@ -11,7 +11,7 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "measuement_unit")
+    list_display = ("id", "name")
     search_fields = ("name",)
 
 

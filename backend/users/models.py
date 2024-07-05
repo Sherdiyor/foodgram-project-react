@@ -1,12 +1,23 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
+
+from .validators import validate_name
 
 
 class User(AbstractUser):
     email = models.EmailField(
         unique=True, verbose_name="почта", max_length=254)
     username = models.CharField(
-        blank=False, unique=True, verbose_name="никнэйм", max_length=150
+        blank=False,
+        unique=True,
+        verbose_name="никнэйм",
+        max_length=150,
+        validators=[
+            RegexValidator(regex=r'[\w.@+-]+',
+                           message="Не корректное имя пользователя"),
+            validate_name
+        ]
     )
     first_name = models.CharField(
         blank=False, verbose_name="имя", max_length=150)

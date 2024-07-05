@@ -1,14 +1,14 @@
 from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
 from users.pagination import CustomPagination
 
-from .filters import IngredientsSearchFilter
+from .filters import IngredientsSearchFilter, RecipeFilter
 from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Tag)
 from .permissions import IsAdminOrAuthorOrReadOnly
@@ -39,14 +39,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     ordering_fields = ("-pub_date",)
     permission_classes = [IsAdminOrAuthorOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filter_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.request.method == "GET":
             return RecipeReadSerializer
         return RecipeCreateSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+    # def perform_create(self, serializer):
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save(author=self.request.user)
 
     def get_queryset(self):
         queryset = Recipe.objects.all()
@@ -87,7 +90,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         data = {"user": user.id, "recipe": recipe.id}
         serializer = ShoppingCartSerializer(data=data, context=context)
-        serializer.is_valid()
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
