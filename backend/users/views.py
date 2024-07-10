@@ -63,3 +63,13 @@ class CustomUserViewSet(UserViewSet):
             Follow, follower=user, following=following)
         subscribe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=False,
+        permission_classes=[IsAuthenticated],
+        serializer_class=CustomUserSerializer,
+    )
+    def me(self, request, pk=None):
+        return Response(
+            self.get_serializer(request.user).data, status.HTTP_200_OK
+        )

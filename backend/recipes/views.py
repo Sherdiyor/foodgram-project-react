@@ -11,7 +11,7 @@ from users.pagination import CustomPagination
 from .filters import IngredientsSearchFilter, RecipeFilter
 from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Tag)
-from .permissions import IsAdminOrAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeReadSerializer,
                           ShoppingCartSerializer, TagSerializer)
@@ -38,7 +38,7 @@ class TagViewSet(GETViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     ordering_fields = ("-pub_date",)
-    permission_classes = [IsAdminOrAuthorOrReadOnly]
+    permission_classes = [IsAuthorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filter_class = RecipeFilter
 
@@ -47,9 +47,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeReadSerializer
         return RecipeCreateSerializer
 
-    # def perform_create(self, serializer):
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save(author=self.request.user)
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
     def get_queryset(self):
         queryset = Recipe.objects.all()

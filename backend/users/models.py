@@ -14,7 +14,7 @@ class User(AbstractUser):
         verbose_name="никнэйм",
         max_length=150,
         validators=[
-            RegexValidator(regex=r'[\w.@+-]+',
+            RegexValidator(regex=r'^[w.@+-]+Z',
                            message="Не корректное имя пользователя"),
             validate_name
         ]
@@ -37,6 +37,7 @@ class User(AbstractUser):
 
     class Meta:
         verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
 
     def __str__(self):
         return self.username
@@ -52,3 +53,4 @@ class Follow(models.Model):
 
     class Meta:
         verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"

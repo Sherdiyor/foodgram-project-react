@@ -9,4 +9,4 @@ router.register("tags", TagViewSet, "tags")
 router.register("recipes", RecipeViewSet, "recipes")
 
 
-urlpatterns = [path("api/", include(router.urls))]
+urlpatterns = [path("", include(router.urls))]

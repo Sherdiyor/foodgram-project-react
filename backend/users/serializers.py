@@ -27,6 +27,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
                                   following=obj.id).exists()
         )
 
+    def validate_username(self, username):
+        if username == "me":
+            raise serializers.ValidationError(
+                "Вы не можете создать пользователя с ником me")
+        return username
+
 
 class FollowRecipeSerializer(serializers.ModelSerializer):
 

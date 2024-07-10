@@ -24,4 +24,4 @@ class RecipeAdmin(admin.ModelAdmin):
         "author",
         "pub_date",
     )
-    search_fields = ("name", "author")
+    search_fields = ("name", "author__username")

@@ -5,19 +5,21 @@ from rest_framework import serializers
 from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Tag)
 
+from .constans import MIN_AMOUNT
+
 
 class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ("id", "name", "color", "slug")
+        fields = ("id", "name", "color", "slug",)
 
 
 class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ("id", "name", "measurement_unit")
+        fields = ("id", "name", "measurement_unit",)
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -25,17 +27,25 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source="ingredient.name")
     measurement_unit = serializers.ReadOnlyField(
         source="ingredient.measurement_unit")
-    amount = serializers.IntegerField()
+    # amount = serializers.IntegerField()
 
     class Meta:
         model = RecipeIngredient
-        fields = ("id", "name", "measurement_unit", "amount")
+        fields = ("id", "name", "measurement_unit", "amount",)
 
-    def validate_amount(self, amount):
-        if amount < 1:
-            raise serializers.ValidationError(
-                "Количество ингредиентов должно быть больше 1")
-        return amount
+    # def validate_amount(self, amount):
+    #     if amount < MIN_AMOUNT:
+    #         raise serializers.ValidationError(
+    #             f"Количество ингредиентов должно быть больше {MIN_AMOUNT}")
+    #     return amount
+
+
+class RecipeIngredientReadSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+
+    class Meta:
+        fields = ("id", "amount",)
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -44,6 +54,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all(), many=True)
     author = UserSerializer(read_only=True)
     image = Base64ImageField(max_length=None)
+    cooking_time = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = Recipe
@@ -74,50 +85,40 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Теги не должны повторяться"
             )
-        for tag in tags:
-            if not Tag.objects.filter(id=tag.id).exists():
-                raise serializers.ValidationError("Такого тега не существует")
         return tags
 
-    def validate_name(self, name):
-        if len(name) < 1:
-            raise serializers.ValidationError(
-                "Поле name должно содержать хотя бы одну букву"
-            )
-        return name
+    # def validate_cooking_time(self, cooking_time):
+    #     if cooking_time < MIN_AMOUNT:
+    #         raise serializers.ValidationError(
+    #             f"Время приготовления должно быть больше {MIN_AMOUNT} минуты"
+    #         )
+    #     return cooking_time
 
-    def validate_cooking_time(self, cooking_time):
-        if cooking_time < 1:
-            raise serializers.ValidationError(
-                "Время приготовления должно быть больше одной минуты"
-            )
-        return cooking_time
-
-    def validate_ingredients(self, ingredients):
-        ingredients_len = len([ingredient.get("id")
-                              for ingredient in ingredients])
+    def validate(self, data):
+        ingredients = data.get("ingredients")
+        ingredients_ids = [ingredient.get("id")
+                           for ingredient in ingredients]
         if not ingredients:
             raise serializers.ValidationError(
                 "Должен быть хотя бы 1 ингредиент")
-        if ingredients_len != len(
-            set([ingredient.get("id") for ingredient in ingredients])
+        if len(ingredients_ids) != len(
+            set(ingredients_ids)
         ):
             raise serializers.ValidationError(
                 "Ингредиенты не должны повторяться"
             )
-        return ingredients
+        return data
 
     @staticmethod
     def create_ingredients(recipe, ingredients):
         ing_list = []
-        for ingredient_data in ingredients:
-            ing_list.append(
-                RecipeIngredient(
-                    ingredient=ingredient_data.pop("id"),
-                    amount=ingredient_data.pop("amount"),
-                    recipe=recipe,
-                )
+        [ing_list.append(
+            RecipeIngredient(
+                ingredient=ingredient_data.pop("id"),
+                amount=ingredient_data.pop("amount"),
+                recipe=recipe,
             )
+        ) for ingredient_data in ingredients]
         RecipeIngredient.objects.bulk_create(ing_list)
 
     def create(self, validated_data):
@@ -134,17 +135,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop("ingredients")
         tags = validated_data.pop("tags")
         instance.tags.set(tags)
-        if not (ingredients or tags):
-            raise serializers.ValidationError(
-                "Ингредиенты или теги отсутствуют"
-            )
         self.create_ingredients(instance, ingredients)
         return super().update(instance, validated_data)
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=False)
-    ingredients = serializers.SerializerMethodField()
+    ingredients = RecipeIngredientReadSerializer(many=True)
     is_favorite = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = UserSerializer(read_only=True)
@@ -163,10 +160,6 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             "text",
             "cooking_time",
         )
-
-    def get_ingredients(self, obj):
-        ingredients = RecipeIngredient.objects.filter(recipe=obj)
-        return RecipeIngredientSerializer(ingredients, many=True).data
 
     def get_is_favorite(self, obj):
         request = self.context.get("request")
