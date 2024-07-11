@@ -2,24 +2,23 @@ from djoser.serializers import UserSerializer
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 
+from .constants import MIN_AMOUNT
 from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Tag)
-
-from .constans import MIN_AMOUNT
 
 
 class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ("id", "name", "color", "slug",)
+        fields = ("id", "name", "color", "slug")
 
 
 class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ("id", "name", "measurement_unit",)
+        fields = ("id", "name", "measurement_unit")
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -27,25 +26,17 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source="ingredient.name")
     measurement_unit = serializers.ReadOnlyField(
         source="ingredient.measurement_unit")
-    # amount = serializers.IntegerField()
-
-    class Meta:
-        model = RecipeIngredient
-        fields = ("id", "name", "measurement_unit", "amount",)
-
-    # def validate_amount(self, amount):
-    #     if amount < MIN_AMOUNT:
-    #         raise serializers.ValidationError(
-    #             f"Количество ингредиентов должно быть больше {MIN_AMOUNT}")
-    #     return amount
-
-
-class RecipeIngredientReadSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
     amount = serializers.IntegerField()
 
     class Meta:
-        fields = ("id", "amount",)
+        model = RecipeIngredient
+        fields = ("id", "name", "measurement_unit", "amount")
+
+    def validate_amount(self, amount):
+        if amount < 1:
+            raise serializers.ValidationError(
+                "Количество ингредиентов должно быть больше 1")
+        return amount
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -87,12 +78,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
         return tags
 
-    # def validate_cooking_time(self, cooking_time):
-    #     if cooking_time < MIN_AMOUNT:
-    #         raise serializers.ValidationError(
-    #             f"Время приготовления должно быть больше {MIN_AMOUNT} минуты"
-    #         )
-    #     return cooking_time
+    def validate_cooking_time(self, cooking_time):
+        if cooking_time < MIN_AMOUNT:
+            raise serializers.ValidationError(
+                f"Время приготовления должно быть больше {MIN_AMOUNT} минуты"
+            )
+        return cooking_time
 
     def validate(self, data):
         ingredients = data.get("ingredients")
@@ -141,7 +132,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=False)
-    ingredients = RecipeIngredientReadSerializer(many=True)
+    ingredients = serializers.SerializerMethodField()
     is_favorite = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = UserSerializer(read_only=True)
@@ -161,27 +152,28 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             "cooking_time",
         )
 
+    def get_ingredients(self, obj):
+        ingredients = RecipeIngredient.objects.filter(recipe=obj)
+        return RecipeIngredientSerializer(ingredients, many=True).data
+
     def get_is_favorite(self, obj):
         request = self.context.get("request")
-        if not request or request.user.is_anonymous:
-            return False
-        return obj.favorites.filter(user=request.user).exists()
+
+        return (False
+                if not (request or request.user.is_authenticated)
+                else obj.favorites.filter(user=request.user).exists())
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get("request")
-        if not request or request.user.is_anonymous:
-            return False
-        return (
-            ShoppingCart.objects.filter(
-                recipe_id=obj.id, user=request.user).exists()
-        )
+        return False if not (request or request.user.is_authenticated) else (
+            request.user.shopping_carts.filter(recipe=obj).exists())
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Favorite
-        fields = ("id", "user", "recipe")
+        fields = ("user", "recipe")
 
     def validate(self, data):
         user = data["user"]
@@ -194,7 +186,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ShoppingCart
-        fields = ("id", "user", "recipe")
+        fields = ("user", "recipe")
 
     def validate(self, data):
         user = data["user"]

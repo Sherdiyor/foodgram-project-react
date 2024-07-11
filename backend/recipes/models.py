@@ -1,11 +1,11 @@
-from django.db import models
-from django.core.validators import MinValueValidator
-
 from colorfield.fields import ColorField
+from django.core.validators import MinValueValidator
+from django.db import models
 
 from users.models import User
 
-from .constans import MAX_COLOR_FIELD_LENGTH, MAX_FILED_LENGTH, MAX_TEXT_LENGTH
+from .constants import (MAX_COLOR_FIELD_LENGTH, MAX_FILED_LENGTH,
+                        MAX_TEXT_LENGTH)
 
 
 class Tag(models.Model):
@@ -54,9 +54,12 @@ class Recipe(models.Model):
     image = models.ImageField(upload_to="images", blank=True)
     name = models.CharField("название", unique=True,
                             max_length=MAX_FILED_LENGTH)
-    text = models.TextField("описание рецепта", validators=[
-                            MinValueValidator(1)])
-    cooking_time = models.PositiveIntegerField("время приготовления")
+    text = models.TextField("описание рецепта", )
+    cooking_time = models.PositiveIntegerField("время приготовления",
+                                               validators=[
+                                                   MinValueValidator(1)
+                                               ]
+                                               )
     pub_date = models.DateTimeField(
         "дата публикации", auto_now_add=True, db_index=True
     )

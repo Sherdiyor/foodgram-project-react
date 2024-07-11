@@ -2,42 +2,34 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 
+from recipes.constants import MAX_EMAIL_LENGTH, MAX_NAMES_LENGTH
+
 from .validators import validate_name
 
 
 class User(AbstractUser):
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
     email = models.EmailField(
-        unique=True, verbose_name="почта", max_length=254)
+        unique=True, verbose_name="почта", max_length=MAX_EMAIL_LENGTH)
     username = models.CharField(
-        blank=False,
         unique=True,
         verbose_name="никнэйм",
-        max_length=150,
+        max_length=MAX_NAMES_LENGTH,
         validators=[
-            RegexValidator(regex=r'^[w.@+-]+Z',
+            RegexValidator(regex=r'[\w.@+-]+',  # r'^[w.@+-]+Z'
                            message="Не корректное имя пользователя"),
             validate_name
         ]
     )
     first_name = models.CharField(
-        blank=False, verbose_name="имя", max_length=150)
+        verbose_name="имя", max_length=MAX_NAMES_LENGTH)
     last_name = models.CharField(
-        blank=False, verbose_name="фамилия", max_length=150)
-    shopping_cart = models.ManyToManyField(
-        "recipes.Recipe",
-        verbose_name="корзина покупок",
-        blank=True,
-        related_name="users",
-    )
-    favorite = models.ManyToManyField(
-        "recipes.Recipe", blank=True, verbose_name="список избранного"
-    )
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
+        verbose_name="фамилия", max_length=MAX_NAMES_LENGTH)
 
     class Meta:
         verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
+        ordering = ("-id",)
 
     def __str__(self):
         return self.username
@@ -53,4 +45,4 @@ class Follow(models.Model):
 
     class Meta:
         verbose_name = "Подписка"
-        verbose_name_plural = "Подписки"
+        ordering = ("following",)

@@ -1,19 +1,19 @@
 from django.shortcuts import get_object_or_404
-from djoser.views import UserViewSet
+from djoser.views import UserViewSet as DJUserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Follow, User
-from .pagination import CustomPagination
-from .serializers import CustomUserSerializer, FollowSerializer
+from .pagination import UserRecipePagination
+from .serializers import FollowSerializer, UserSerializer
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(DJUserViewSet):
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
-    pagination_class = CustomPagination
+    serializer_class = UserSerializer
+    pagination_class = UserRecipePagination
     permission_classes = [AllowAny]
 
     @action(
@@ -22,24 +22,13 @@ class CustomUserViewSet(UserViewSet):
     def subscribe(self, request, id=None):
         user = request.user
         following = get_object_or_404(User, id=id)
-
-        if user == following:
-            return Response(
-                {"errors": "вы не можете подписаться сами на себя"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if Follow.objects.filter(follower=user, following=following).exists():
-            return Response(
-                {"errors": "вы уже подписаны на этого пользователя"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        follow = Follow.objects.create(follower=user, following=following)
+        follow = {'follower': user, 'following': following}
         serializer = FollowSerializer(
-            follow,
+            data=follow,
             context={"request": request},
         )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(
@@ -67,7 +56,7 @@ class CustomUserViewSet(UserViewSet):
     @action(
         detail=False,
         permission_classes=[IsAuthenticated],
-        serializer_class=CustomUserSerializer,
+        serializer_class=UserSerializer,
     )
     def me(self, request, pk=None):
         return Response(

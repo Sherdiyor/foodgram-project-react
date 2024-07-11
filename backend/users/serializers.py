@@ -1,11 +1,12 @@
-from recipes.models import Recipe
 from rest_framework import serializers
+
+from recipes.models import Recipe
 
 from .models import Follow, User
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
+class UserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -20,11 +21,9 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get("request")
-        if request.user.is_anonymous:
-            return False
-        return (
-            Follow.objects.filter(follower=request.user,
-                                  following=obj.id).exists()
+        return False if not request.user.is_authenticated else (
+            obj.following.filter(follower=request.user,
+                                 following=obj.id).exists()
         )
 
     def validate_username(self, username):
@@ -49,7 +48,7 @@ class FollowRecipeSerializer(serializers.ModelSerializer):
 class FollowSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.ReadOnlyField(source="following.recipes_count")
     id = serializers.ReadOnlyField(source="following.id")
     email = serializers.ReadOnlyField(source="following.email")
     username = serializers.ReadOnlyField(source="following.username")
@@ -69,6 +68,17 @@ class FollowSerializer(serializers.ModelSerializer):
             "recipes_count",
         )
 
+    def validate(self, data):
+        user = self.context.get('request').user
+        following = data.get('following')
+        if user == following:
+            raise serializers.ValidationError({
+                'errors': 'Нельзя подписаться на самого себя'})
+        if Follow.objects.filter(follower=user, following=following).exists():
+            raise serializers.ValidationError({
+                'errors': 'Вы уже подписаны на данного пользователя'})
+        return data
+
     def get_is_subscribed(self, obj):
         return Follow.objects.filter(
             follower=obj.follower, following=obj.following
@@ -79,8 +89,9 @@ class FollowSerializer(serializers.ModelSerializer):
         limit = request.GET.get("recipes_limit")
         queryset = Recipe.objects.filter(author=obj.following)
         if limit:
-            queryset = queryset[: int(limit)]
+            try:
+                queryset = queryset[:int(limit)]
+            except TypeError:
+                serializers.ValidationError(
+                    'Значение limit является объектом NoneType')
         return FollowRecipeSerializer(queryset, many=True).data
-
-    def get_recipes_count(self, obj):
-        return Recipe.objects.filter(author=obj.following).count()
