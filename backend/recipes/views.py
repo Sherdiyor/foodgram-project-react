@@ -4,17 +4,16 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
+from recipes.filters import IngredientsSearchFilter, RecipeFilter
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
+from recipes.permissions import IsAuthorOrReadOnly
+from recipes.serializers import (FavoriteSerializer, IngredientSerializer,
+                                 RecipeCreateSerializer, RecipeReadSerializer,
+                                 ShoppingCartSerializer, TagSerializer)
+from recipes.utils import (favorite_or_shopping_delete, shopping_cart_file,
+                           shopping_or_favorite)
 from users.pagination import UserRecipePagination
-
-from .filters import IngredientsSearchFilter, RecipeFilter
-from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                     ShoppingCart, Tag)
-from .permissions import IsAuthorOrReadOnly
-from .serializers import (FavoriteSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeReadSerializer,
-                          ShoppingCartSerializer, TagSerializer)
-from .utils import (favorite_or_shopping_delete, shopping_cart_file,
-                    shopping_or_favorite)
 
 
 class GETViewSet(
@@ -49,7 +48,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeCreateSerializer
 
     def perform_create(self, serializer):
-        serializer.is_valid(raise_exception=True)
         serializer.save(author=self.request.user)
 
     @action(

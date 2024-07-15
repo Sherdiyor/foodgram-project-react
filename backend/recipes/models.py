@@ -2,10 +2,9 @@ from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from recipes.constants import (MAX_COLOR_FIELD_LENGTH, MAX_FILED_LENGTH,
+                               MAX_TEXT_LENGTH, MIN_COOKING_TIME)
 from users.models import User
-
-from .constants import (MAX_COLOR_FIELD_LENGTH, MAX_FILED_LENGTH,
-                        MAX_TEXT_LENGTH)
 
 
 class Tag(models.Model):
@@ -52,14 +51,17 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="recipes")
     image = models.ImageField(upload_to="images", blank=True)
-    name = models.CharField("название", unique=True,
-                            max_length=MAX_FILED_LENGTH)
+    name = models.CharField(
+        "название", unique=True,
+        max_length=MAX_FILED_LENGTH
+    )
     text = models.TextField("описание рецепта", )
-    cooking_time = models.PositiveIntegerField("время приготовления",
-                                               validators=[
-                                                   MinValueValidator(1)
-                                               ]
-                                               )
+    cooking_time = models.PositiveIntegerField(
+        "время приготовления",
+        validators=[
+            MinValueValidator(MIN_COOKING_TIME)
+        ]
+    )
     pub_date = models.DateTimeField(
         "дата публикации", auto_now_add=True, db_index=True
     )
@@ -111,6 +113,9 @@ class Favorite(models.Model):
             models.UniqueConstraint(fields=["recipe", "user"], name="favorite")
         ]
 
+    def __str__(self) -> str:
+        return self.recipe[:MAX_TEXT_LENGTH]
+
 
 class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
@@ -126,12 +131,13 @@ class ShoppingCart(models.Model):
         related_name="shopping_carts",
     )
 
-    class meta:
+    class Meta:
         verbose_name = "Список покупок"
-        constraint = [
+        constraints = [
             models.UniqueConstraint(
                 fields=("recipe", "user"), name="recipe_is_in_cart")
         ]
+        ordering = ('user__username',)
 
     def __str__(self):
         return f"{self.recipe} находится в корзине у {self.user}"

@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import Ingredient, Recipe, Tag
+from recipes.models import Ingredient, Recipe, Tag
+
+
+class IngredientInline(admin.TabularInline):
+    model = Ingredient
+
+
+class TagInline(admin.TabularInline):
+    model = Tag
 
 
 @admin.register(Tag)
@@ -25,3 +33,7 @@ class RecipeAdmin(admin.ModelAdmin):
         "pub_date",
     )
     search_fields = ("name", "author__username")
+    inlines = [
+        IngredientInline,
+        TagInline,
+    ]

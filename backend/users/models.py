@@ -3,8 +3,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 from recipes.constants import MAX_EMAIL_LENGTH, MAX_NAMES_LENGTH
-
-from .validators import validate_name
+from users.validators import validate_name
 
 
 class User(AbstractUser):
@@ -29,7 +28,7 @@ class User(AbstractUser):
 
     class Meta:
         verbose_name = "Пользователь"
-        ordering = ("-id",)
+        ordering = ("username",)
 
     def __str__(self):
         return self.username
@@ -46,3 +45,12 @@ class Follow(models.Model):
     class Meta:
         verbose_name = "Подписка"
         ordering = ("following",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['follower', 'following'],
+                name='unique_follower_following'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.follower} подписан на {self.following}"

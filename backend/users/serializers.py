@@ -1,8 +1,8 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import Recipe
-
-from .models import Follow, User
+from users.models import Follow, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -21,10 +21,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get("request")
-        return False if not request.user.is_authenticated else (
-            obj.following.filter(follower=request.user,
-                                 following=obj.id).exists()
-        )
+        return obj.following.filter(follower=request.user,
+                                    following=obj.id).exists()
 
     def validate_username(self, username):
         if username == "me":
@@ -45,7 +43,7 @@ class FollowRecipeSerializer(serializers.ModelSerializer):
         )
 
 
-class FollowSerializer(serializers.ModelSerializer):
+class UserFollowSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.ReadOnlyField(source="following.recipes_count")
@@ -68,17 +66,6 @@ class FollowSerializer(serializers.ModelSerializer):
             "recipes_count",
         )
 
-    def validate(self, data):
-        user = self.context.get('request').user
-        following = data.get('following')
-        if user == following:
-            raise serializers.ValidationError({
-                'errors': 'Нельзя подписаться на самого себя'})
-        if Follow.objects.filter(follower=user, following=following).exists():
-            raise serializers.ValidationError({
-                'errors': 'Вы уже подписаны на данного пользователя'})
-        return data
-
     def get_is_subscribed(self, obj):
         return Follow.objects.filter(
             follower=obj.follower, following=obj.following
@@ -95,3 +82,35 @@ class FollowSerializer(serializers.ModelSerializer):
                 serializers.ValidationError(
                     'Значение limit является объектом NoneType')
         return FollowRecipeSerializer(queryset, many=True).data
+
+
+class FollowSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Follow
+        fields = (
+            "id",
+            "following",
+            "follower",
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Follow.objects.all(),
+                fields=('follower', 'following'),
+                message='Вы уже подписаны на этого пользователя.'
+            )
+        ]
+
+    def validate(self, data):
+        request = self.context.get('request')
+        if request.user == self.context.get('following'):
+            raise serializers.ValidationError(
+                'Нельзя подписываться на самого себя!'
+            )
+        return data
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return UserFollowSerializer(
+            instance.following, context={'request': request}
+        ).data

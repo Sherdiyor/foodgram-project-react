@@ -16,7 +16,9 @@ if os.path.isfile(envfile):
 
 SECRET_KEY = os.getenv("SECRET_KEY", RANDOM_SECRET_KEY)
 
-DEBUG = (os.getenv("DEBUG", "")).lower() == "true"
+# DEBUG = (os.getenv("DEBUG", "")).lower() == "true"
+
+DEBUG = True
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
@@ -78,6 +80,13 @@ DATABASES = {
         "PORT": os.getenv("DB_PORT", 5432),
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 
 AUTH_PASSWORD_VALIDATORS = [

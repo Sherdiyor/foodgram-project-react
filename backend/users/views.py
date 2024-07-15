@@ -5,9 +5,10 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Follow, User
-from .pagination import UserRecipePagination
-from .serializers import FollowSerializer, UserSerializer
+from users.models import Follow, User
+from users.pagination import UserRecipePagination
+from users.serializers import (FollowSerializer, UserFollowSerializer,
+                               UserSerializer)
 
 
 class UserViewSet(DJUserViewSet):
@@ -25,7 +26,7 @@ class UserViewSet(DJUserViewSet):
         follow = {'follower': user, 'following': following}
         serializer = FollowSerializer(
             data=follow,
-            context={"request": request},
+            context={"request": request, "following": following},
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -39,7 +40,7 @@ class UserViewSet(DJUserViewSet):
     def subscriptions(self, request):
         query = Follow.objects.filter(follower=request.user)
         paginated_content = self.paginate_queryset(queryset=query)
-        serializer = FollowSerializer(
+        serializer = UserFollowSerializer(
             paginated_content, context={"request": request}, many=True
         )
         return self.get_paginated_response(serializer.data)
