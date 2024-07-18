@@ -75,6 +75,26 @@ class Recipe(models.Model):
         return self.name[:MAX_TEXT_LENGTH]
 
 
+class RecipeTag(models.Model):
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, related_name="recipe_tags"
+    )
+    tag = models.ForeignKey(
+        Tag, on_delete=models.CASCADE, related_name="recipe_tags"
+    )
+
+    class Meta:
+        verbose_name = "Тег рецепта"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["recipe", "tag"], name="recipe_tags"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.tag.name[:MAX_TEXT_LENGTH]
+
+
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name="recipe_ingredients"
@@ -95,7 +115,7 @@ class RecipeIngredient(models.Model):
         ]
 
     def __str__(self):
-        return self.ingredient[:MAX_TEXT_LENGTH]
+        return self.ingredient.name[:MAX_TEXT_LENGTH]
 
 
 class Favorite(models.Model):
@@ -114,7 +134,7 @@ class Favorite(models.Model):
         ]
 
     def __str__(self) -> str:
-        return self.recipe[:MAX_TEXT_LENGTH]
+        return self.recipe.name[:MAX_TEXT_LENGTH]
 
 
 class ShoppingCart(models.Model):

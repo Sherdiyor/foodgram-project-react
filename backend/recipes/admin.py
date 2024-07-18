@@ -1,14 +1,14 @@
 from django.contrib import admin
 
-from recipes.models import Ingredient, Recipe, Tag
+from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 
 
 class IngredientInline(admin.TabularInline):
-    model = Ingredient
+    model = RecipeIngredient
 
 
 class TagInline(admin.TabularInline):
-    model = Tag
+    model = RecipeTag
 
 
 @admin.register(Tag)

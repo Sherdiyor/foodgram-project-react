@@ -4,6 +4,7 @@ import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.db import IntegrityError
 
 from recipes.models import Ingredient
 
@@ -23,10 +24,11 @@ class Command(BaseCommand):
                       encoding='utf-8') as file_data_json:
                 data_ingredient = json.load(file_data_json)
                 logging.info('Загрузка ингредиентов началась')
-                for ingredient_item in data_ingredient:
-                    Ingredient.objects.get_or_create(
-                        name=ingredient_item['name'],
-                        measurement_unit=ingredient_item['measurement_unit'])
-                logging.info('Загрузка ингредиентов завершена')
+                try:
+                    Ingredient.objects.bulk_create(
+                        Ingredient(**items) for items in data_ingredient
+                    )
+                except IntegrityError:
+                    logging.info('Ингредиенты уже были загружены')
         except FileNotFoundError as err:
             raise CommandError('Файл отсутствует в директории data') from err

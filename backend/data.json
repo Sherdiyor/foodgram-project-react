@@ -18097,17 +18097,14 @@
             "password": "pbkdf2_sha256$390000$Tcgm6KSVyfuEKG5PXEqgeS$bskXM7vCMbe1b+zC9/+vDeH6ZuNNbXXqWL5/vX4mC0g=",
             "last_login": "2023-02-26T09:59:02.902Z",
             "is_superuser": true,
-            "username": "demian",
+            "username": "admin",
             "first_name": "",
             "last_name": "",
-            "email": "kdemian@yandex.ru",
+            "email": "admin@example.com",
             "is_staff": true,
             "is_active": true,
             "date_joined": "2023-02-26T09:58:41.707Z",
             "groups": [],
-            "user_permissions": [],
-            "shopping_cart": [],
-            "favorite": []
-        }
+            "user_permissions": []        }
     }
 ]

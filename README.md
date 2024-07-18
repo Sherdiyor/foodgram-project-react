@@ -29,7 +29,7 @@
 6. Выполните команду sudo docker exec -it infra-backend-1 bash, это откроет bash внутри контейнера Django приложения.
 
 7. Теперь вам нужно выполнить несколько команд:
-- python3 manage.py makemigrations & python3 manage.py migrate & python3 manage.py collectstatic & python manage.py loaddata data.json & python manage.py import loads_ingredients
+- python3 manage.py makemigrations & python3 manage.py migrate & python3 manage.py collectstatic & python manage.py loads_ingredients & python manage.py loaddata data.json
 (Просто скопируйте и вставьте, возможно, вам придется ввести "Yes" и нажать Enter)
 - Вы создали миграции и применили их (настроили базу данных), создали статические файлы (для того, чтобы панель администратора и конечные точки API выглядели красиво) и загрузили данные об ингредиентах. Также создан предварительный администратор. (Учетные данные внизу README)
 
@@ -46,3 +46,7 @@
 - Чтобы остановить проект, выполните шаг 3 и запустите sudo docker-compose stop.
 
 - Полная документация доступна на [127.0.0.1/api/swagger](http://127.0.0.1/api/swagger/) 
+
+## Автор
+
+![Sherdiyor](https://github.com/Sherdiyor)

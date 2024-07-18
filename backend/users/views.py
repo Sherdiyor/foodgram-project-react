@@ -1,3 +1,5 @@
+import logging
+
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet as DJUserViewSet
 from rest_framework import status
@@ -21,16 +23,21 @@ class UserViewSet(DJUserViewSet):
         detail=True, methods=["post"], permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, id=None):
-        user = request.user
         following = get_object_or_404(User, id=id)
-        follow = {'follower': user, 'following': following}
+        data = {"following": following.id, "follower": request.user.id}
         serializer = FollowSerializer(
-            data=follow,
-            context={"request": request, "following": following},
+            data=data,
+            context={"request": request, 'following': following},
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            logging.critical(serializer.errors)
+            return Response(
+                {'Failure': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(
         detail=False,
@@ -38,7 +45,7 @@ class UserViewSet(DJUserViewSet):
         permission_classes=[IsAuthenticated],
     )
     def subscriptions(self, request):
-        query = Follow.objects.filter(follower=request.user)
+        query = User.objects.filter(following__follower=request.user)
         paginated_content = self.paginate_queryset(queryset=query)
         serializer = UserFollowSerializer(
             paginated_content, context={"request": request}, many=True

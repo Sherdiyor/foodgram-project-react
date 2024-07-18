@@ -43,44 +43,37 @@ class FollowRecipeSerializer(serializers.ModelSerializer):
         )
 
 
-class UserFollowSerializer(serializers.ModelSerializer):
+class UserFollowSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.ReadOnlyField(source="following.recipes_count")
-    id = serializers.ReadOnlyField(source="following.id")
-    email = serializers.ReadOnlyField(source="following.email")
-    username = serializers.ReadOnlyField(source="following.username")
-    first_name = serializers.ReadOnlyField(source="following.first_name")
-    last_name = serializers.ReadOnlyField(source="following.last_name")
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = Follow
-        fields = (
-            "id",
-            "email",
-            "username",
-            "first_name",
-            "last_name",
-            "is_subscribed",
+        model = User
+        fields = UserSerializer.Meta.fields + (
             "recipes",
             "recipes_count",
         )
 
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
+
     def get_is_subscribed(self, obj):
-        return Follow.objects.filter(
-            follower=obj.follower, following=obj.following
+        return obj.following.filter(
+            follower=self.context.get('request').user
         ).exists()
 
     def get_recipes(self, obj):
         request = self.context.get("request")
         limit = request.GET.get("recipes_limit")
-        queryset = Recipe.objects.filter(author=obj.following)
         if limit:
             try:
-                queryset = queryset[:int(limit)]
+                queryset = Recipe.objects.filter(author=obj)[:int(limit)]
             except TypeError:
                 serializers.ValidationError(
                     'Значение limit является объектом NoneType')
+        else:
+            queryset = Recipe.objects.filter(author=obj)
         return FollowRecipeSerializer(queryset, many=True).data
 
 
@@ -89,7 +82,6 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = (
-            "id",
             "following",
             "follower",
         )
@@ -108,9 +100,3 @@ class FollowSerializer(serializers.ModelSerializer):
                 'Нельзя подписываться на самого себя!'
             )
         return data
-
-    def to_representation(self, instance):
-        request = self.context.get('request')
-        return UserFollowSerializer(
-            instance.following, context={'request': request}
-        ).data

@@ -124,13 +124,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.tags.clear()
         instance.ingredients.clear()
-        try:
-            ingredients = validated_data.pop("ingredients")
-            tags = validated_data.pop("tags")
-        except KeyError:
-            raise serializers.ValidationError(
-                'ингредиенты или теги отстуствуют в валидированных данных'
-            )
+
+        ingredients = validated_data.pop("ingredients")
+        tags = validated_data.pop("tags")
         instance.tags.set(tags)
         self.create_ingredients(instance, ingredients)
         return super().update(instance, validated_data)
@@ -165,11 +161,17 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     def get_is_favorite(self, obj):
         request = self.context.get("request")
 
-        return obj.favorites.filter(user=request.user).exists()
+        return (
+            obj.favorites.filter(user=request.user).exists()
+            and request.user.is_authenticated
+        )
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get("request")
-        return request.user.shopping_carts.filter(recipe=obj).exists()
+        return (
+            request.user.shopping_carts.filter(recipe=obj).exists()
+            and request.user.is_authenticated
+        )
 
 
 class FavoriteSerializer(serializers.ModelSerializer):

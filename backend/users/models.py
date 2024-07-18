@@ -16,7 +16,7 @@ class User(AbstractUser):
         verbose_name="никнэйм",
         max_length=MAX_NAMES_LENGTH,
         validators=[
-            RegexValidator(regex=r'[\w.@+-]+',  # r'^[w.@+-]+Z'
+            RegexValidator(regex=r'^[w.@+-]+Z',
                            message="Не корректное имя пользователя"),
             validate_name
         ]
@@ -44,7 +44,7 @@ class Follow(models.Model):
 
     class Meta:
         verbose_name = "Подписка"
-        ordering = ("following",)
+        ordering = ("following__username",)
         constraints = [
             models.UniqueConstraint(
                 fields=['follower', 'following'],
