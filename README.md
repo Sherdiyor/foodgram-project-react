@@ -1,3 +1,5 @@
+[![Foodgram](https://github.com/Sherdiyor/foodgram-project-react/actions/workflows/main.yml/badge.svg)](https://github.com/Sherdiyor/foodgram-project-react/actions/workflows/main.yml)
+
 # Foodgram
 
 Этот проект поможет вам находить рецепты и идеи блюд. Надеюсь, он будет вам полезен! Для начала использования вам нужно просто зарегистрироваться или войти. И теперь у вас есть возможность делать все, что вам нравится. Удачи!
