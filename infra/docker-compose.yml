@@ -20,7 +20,8 @@ services:
       - ../frontend/:/app/result_build/
 
   backend:
-    image: sherdiyor198917/foodgram_backend/
+    image: sherdiyor198917/foodgram_backend
+    container_name: backend
     volumes:
       - static:/app/static/
       - media:/app/media/
