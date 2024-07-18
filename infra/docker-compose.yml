@@ -20,9 +20,7 @@ services:
       - ../frontend/:/app/result_build/
 
   backend:
-    build:
-      context: ../backend/
-      dockerfile: Dockerfile
+    image: sherdiyor198917/foodgram_backend/
     volumes:
       - static:/app/static/
       - media:/app/media/
