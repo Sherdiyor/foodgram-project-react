@@ -28,7 +28,7 @@
 
 5. После успешной установки пакетов просто выполните команду sudo docker-compose up --build -d. Дождитесь завершения процесса.
 
-6. Выполните команду sudo docker exec -it infra-backend-1 bash, это откроет bash внутри контейнера Django приложения.
+6. Выполните команду sudo docker exec -it backend bash, это откроет bash внутри контейнера Django приложения.
 
 7. Теперь вам нужно выполнить несколько команд:
 - python3 manage.py makemigrations & python3 manage.py migrate & python3 manage.py collectstatic & python manage.py loads_ingredients & python manage.py loaddata data.json
