@@ -1,5 +1,3 @@
-import logging
-
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet as DJUserViewSet
 from rest_framework import status
@@ -24,16 +22,15 @@ class UserViewSet(DJUserViewSet):
     )
     def subscribe(self, request, id=None):
         following = get_object_or_404(User, id=id)
-        data = {"following": following.id, "follower": request.user.id}
+        follow_data = {"following": following.id, "follower": request.user.id}
         serializer = FollowSerializer(
-            data=data,
+            data=follow_data,
             context={"request": request, 'following': following},
         )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            logging.critical(serializer.errors)
             return Response(
                 {'Failure': serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
@@ -56,10 +53,11 @@ class UserViewSet(DJUserViewSet):
     def delete_subscribe(self, request, id=None):
         user = request.user
         following = get_object_or_404(User, pk=id)
-        subscribe = get_object_or_404(
-            Follow, follower=user, following=following)
-        subscribe.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        subscribe = Follow.objects.filter(follower=user, following=following)
+        if subscribe.exists():
+            subscribe.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=False,
@@ -67,6 +65,12 @@ class UserViewSet(DJUserViewSet):
         serializer_class=UserSerializer,
     )
     def me(self, request, pk=None):
+        data = UserSerializer(
+            request.user,
+            context={
+                'request': request
+            }
+        ).data
         return Response(
-            self.get_serializer(request.user).data, status.HTTP_200_OK
+            data, status=200
         )

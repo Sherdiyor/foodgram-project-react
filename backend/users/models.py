@@ -16,7 +16,7 @@ class User(AbstractUser):
         verbose_name="никнэйм",
         max_length=MAX_NAMES_LENGTH,
         validators=[
-            RegexValidator(regex=r'^[w.@+-]+Z',
+            RegexValidator(regex=r'^[\w.@+-]+$',
                            message="Не корректное имя пользователя"),
             validate_name
         ]

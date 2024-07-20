@@ -5,6 +5,7 @@ from rest_framework import serializers
 from recipes.constants import MIN_AMOUNT
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
+from users.serializers import FollowRecipeSerializer
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -67,37 +68,33 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             instance, context={"request": self.context.get("request")}
         ).data
 
-    def validate_tags(self, tags):
-        tags_len = len(tags)
-        if not tags:
-            raise serializers.ValidationError(
-                "Нельзя создать рецепт без тегов"
-            )
-        if tags_len != len(set(tags)):
-            raise serializers.ValidationError(
-                "Теги не должны повторяться"
-            )
-        return tags
-
-    def validate_cooking_time(self, cooking_time):
-        if cooking_time < MIN_AMOUNT:
-            raise serializers.ValidationError(
-                f"Время приготовления должно быть больше {MIN_AMOUNT} минуты"
-            )
-        return cooking_time
-
     def validate(self, data):
         ingredients = data.get("ingredients")
-        ingredients_ids = [ingredient.get("id")
-                           for ingredient in ingredients]
+        tags = data.get("tags")
+        cooking_time = data.get("cooking_time")
         if not ingredients:
             raise serializers.ValidationError(
                 "Должен быть хотя бы 1 ингредиент")
+        ingredients_ids = [ingredient.get("id")
+                           for ingredient in ingredients]
         if len(ingredients_ids) != len(
             set(ingredients_ids)
         ):
             raise serializers.ValidationError(
                 "Ингредиенты не должны повторяться"
+            )
+        if not tags:
+            raise serializers.ValidationError(
+                "Нельзя создать рецепт без тегов"
+            )
+        tags_len = len(tags)
+        if tags_len != len(set(tags)):
+            raise serializers.ValidationError(
+                "Теги не должны повторяться"
+            )
+        if cooking_time < MIN_AMOUNT:
+            raise serializers.ValidationError(
+                f"Время приготовления должно быть больше {MIN_AMOUNT} минуты"
             )
         return data
 
@@ -132,10 +129,16 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class RecipeSmallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = FollowRecipeSerializer.Meta.fields
+
+
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=False)
     ingredients = serializers.SerializerMethodField()
-    is_favorite = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = UserSerializer(read_only=True)
 
@@ -146,7 +149,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             "tags",
             "author",
             "ingredients",
-            "is_favorite",
+            "is_favorited",
             "is_in_shopping_cart",
             "name",
             "image",
@@ -158,19 +161,20 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         ingredients = obj.recipe_ingredients.all()
         return RecipeIngredientSerializer(ingredients, many=True).data
 
-    def get_is_favorite(self, obj):
+    def get_is_favorited(self, obj):
         request = self.context.get("request")
 
         return (
-            obj.favorites.filter(user=request.user).exists()
-            and request.user.is_authenticated
+            request.user.is_authenticated
+            and obj.favorites.filter(user=request.user).exists()
+
         )
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get("request")
         return (
-            request.user.shopping_carts.filter(recipe=obj).exists()
-            and request.user.is_authenticated
+            request.user.is_authenticated
+            and request.user.shopping_carts.filter(recipe=obj).exists()
         )
 
 
@@ -185,6 +189,13 @@ class FavoriteSerializer(serializers.ModelSerializer):
         if user.favorites.filter(recipe=data["recipe"]).exists():
             raise serializers.ValidationError("Рецепт уже есть в избранном")
         return data
+
+    def to_representation(self, instance):
+        return RecipeSmallSerializer(
+            instance.recipe, context={
+                'request': self.context.get('request')
+            }
+        ).data
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
@@ -203,3 +214,10 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Рецепт уже добавлен в список покупок")
         return data
+
+    def to_representation(self, instance):
+        return RecipeSmallSerializer(
+            instance.recipe, context={
+                'request': self.context.get('request')
+            }
+        ).data

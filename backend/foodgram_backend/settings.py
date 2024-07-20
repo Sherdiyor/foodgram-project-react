@@ -18,12 +18,11 @@ SECRET_KEY = os.getenv("SECRET_KEY", RANDOM_SECRET_KEY)
 
 DEBUG = (os.getenv("DEBUG", "")).lower() == "true"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS", "localhost,127.0.0.1,158.160.76.3").split(",")
 
 
 INSTALLED_APPS = [
-    "recipes",
-    "users",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -35,6 +34,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "djoser",
+    "users",
+    "recipes",
 ]
 
 MIDDLEWARE = [
@@ -78,7 +79,6 @@ DATABASES = {
         "PORT": os.getenv("DB_PORT", 5432),
     }
 }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {

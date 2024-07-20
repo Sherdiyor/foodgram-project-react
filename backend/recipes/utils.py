@@ -9,7 +9,11 @@ from recipes.models import Recipe
 def shopping_or_favorite(request, pk, serializer):
     user = request.user
     context = {"request": request}
-    recipe = get_object_or_404(Recipe, id=pk)
+    try:
+        recipe = Recipe.objects.get(id=pk)
+    except Recipe.DoesNotExist:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
     data = {"user": user.id, "recipe": recipe.id}
     serializer = serializer(data=data, context=context)
     serializer.is_valid(raise_exception=True)
@@ -18,11 +22,13 @@ def shopping_or_favorite(request, pk, serializer):
 
 
 def favorite_or_shopping_delete(request, pk, model):
-    get_object_or_404(
-        model, user=request.user, recipe=get_object_or_404(
-            Recipe, id=pk)
-    ).delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    mod = model.objects.filter(user=request.user, recipe=get_object_or_404(
+        Recipe, id=pk)
+    )
+    if mod.exists():
+        mod.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 def shopping_cart_file(request, ingredients):

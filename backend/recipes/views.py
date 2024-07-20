@@ -40,7 +40,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ordering_fields = ("-pub_date",)
     permission_classes = [IsAuthorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
-    filter_class = RecipeFilter
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.request.method == "GET":
