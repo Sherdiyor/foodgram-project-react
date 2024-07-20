@@ -59,7 +59,7 @@ class UserFollowSerializer(UserSerializer):
         limit = request.GET.get("recipes_limit")
         queryset = obj.recipes.all()
 
-        if limit:
+        if limit.isdigit():
             queryset = obj.recipes.all()[:int(limit)]
 
         return FollowRecipeSerializer(
